@@ -1,7 +1,7 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ChatActions, ReplyKeyboardMarkup, KeyboardButton
 from aiogram import types
 from db import create_or_get_user
-from db import create_box, get_user_boxes, get_box, delete_box
+from db import create_box, get_user_boxes, delete_box
 
 from db import get_overdue_boxes, get_all_boxes, get_box
 
