@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import asyncio
 from asyncio import sleep
 
-import bot_db
+import db
 from keyboard import *
 
 from aiogram import Bot, Dispatcher, executor, types
