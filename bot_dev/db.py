@@ -1,12 +1,14 @@
+import os
 import mysql.connector
 from dotenv import load_dotenv, find_dotenv
-from init_db import INIT_DB
+
+# from init_db import INIT_DB
 
 
-def on_start(connection):
-    cursor = connection.cursor()
-    cursor.execute(INIT_DB)
-    connection.commit()
+# def on_start(connection):
+#     cursor = connection.cursor()
+#     cursor.execute(INIT_DB)
+#     connection.commit()
 
 
 def create_connection(host_name, database, user_name, user_password):
@@ -33,7 +35,7 @@ def get_user_id(connection, tg_username):
 def create_user(connection, tg_username='@', nickname='', phone='', adress=''):
     add_user = "INSERT INTO user(tg_username, nickname, phone, adress) VALUES (%s, %s, %s, %s)"
     cursor = connection.cursor()
-    cursor.execute(add_user, data_user)
+    cursor.execute(add_user, (tg_username, nickname, phone, adress))
     connection.commit()
 
 
@@ -113,21 +115,21 @@ def get_all_boxes(connection: mysql.connector) -> list[tuple]:
 
 
 def get_connection():
-    load_dotenv(find_dotenv())
     conn = create_connection(
         host_name="localhost", 
         database="self_storage",
         user_name="root",
-        user_password='1234')
+        user_password=os.getenv('PSW'))
     return conn
 
 
 if __name__ == "__main__":
+    load_dotenv(find_dotenv())
     conn = get_connection()
-    # data_user = ['@supername', 'nick', '+909048383', 'NYC']
-    # user_id = create_user(conn, *data_user)
-    user_id = get_user_id(conn, '@myname')
+    data_user = ['@supernamer', 'nick', '+909048383', 'NYC']
+    user_id = create_user(conn, *data_user)
+    # user_id = get_user_id(conn, '@myname')
     # user_id = get_or_create_user(conn, data_user)
-    # print(user_id)
+    print(user_id)
 
     # create_box('')
