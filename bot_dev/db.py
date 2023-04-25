@@ -1,10 +1,12 @@
-import os
 import mysql.connector
 from dotenv import load_dotenv, find_dotenv
+from init_db import INIT_DB
 
 
-def on_startup():
-    pass
+def on_start(connection):
+    cursor = connection.cursor()
+    cursor.execute(INIT_DB)
+    connection.commit()
 
 
 def create_connection(host_name, database, user_name, user_password):
@@ -19,28 +21,35 @@ def create_connection(host_name, database, user_name, user_password):
     return connection
 
 
-# data_user = [tg_username, nickname, phone, adress]
-def create_or_get_user(connection: mysql.connector,
-                       data_user: list) -> int | None:
-    tg_username = data_user[1]
+def get_user_id(connection, tg_username):
     cursor = connection.cursor()
-    try:
-        get_user_id = ("SELECT user_id FROM user "
-                       "WHERE tg_username = %s")
-        cursor.execute(get_user_id, (tg_username, ))
-        user_id = cursor.fetchall()[0][0]
+    get_user_id = ("SELECT user_id FROM user WHERE tg_username = %s")
+    cursor.execute(get_user_id, (tg_username, ))
+    user_id = cursor.fetchall()
+    if user_id:
+        return user_id[0][0]
+
+
+def create_user(connection, tg_username='@', nickname='', phone='', adress=''):
+    add_user = "INSERT INTO user(tg_username, nickname, phone, adress) VALUES (%s, %s, %s, %s)"
+    cursor = connection.cursor()
+    cursor.execute(add_user, data_user)
+    connection.commit()
+
+
+# data_user = [tg_username, nickname, phone, adress]
+def get_or_create_user(connection: mysql.connector, data_user: list) -> int:
+    tg_username = data_user[0]
+    user_id = get_user_id(connection, tg_username)
+    if user_id:
         return user_id
-    except mysql.connector.Error:
-        add_user = ("INSERT INTO user "
-                    "(tg_username, nickname, phone, adress) "
-                    "VALUES (%s, %s, %s, %s)")
-        cursor.execute(add_user, data_user)
-        connection.commit()
+    create_user(connection, *data_user)
+    return get_user_id(connection, tg_username)
 
 
 # data_box = [box_name, created_at, finished_at, items_size, items_weight, salt, encrypted_key]
-def create_box(connection: mysql.connector, data_user: list, data_box: list):
-    user_id = create_or_get_user(connection, data_user)
+def create_box(connection, user_id, data_box):
+
     data_box.insert(1, user_id)
     add_box_for_user = ("INSERT INTO box "
                         "(box_name, user_id, created_at, finished_at, items_size, items_weight, salt, encrypted_key) "
@@ -103,17 +112,22 @@ def get_all_boxes(connection: mysql.connector) -> list[tuple]:
     return cursor.fetchall()
 
 
-def main():
+def get_connection():
     load_dotenv(find_dotenv())
     conn = create_connection(
         host_name="localhost", 
         database="self_storage",
         user_name="root",
-        user_password='michael')
+        user_password='1234')
     return conn
 
 
 if __name__ == "__main__":
-    conn = main()
-    data_user = ['@myname', '', '+9048383', 'NYC']
-    user_id = create_or_get_user(conn, data_user)
+    conn = get_connection()
+    # data_user = ['@supername', 'nick', '+909048383', 'NYC']
+    # user_id = create_user(conn, *data_user)
+    user_id = get_user_id(conn, '@myname')
+    # user_id = get_or_create_user(conn, data_user)
+    # print(user_id)
+
+    # create_box('')
