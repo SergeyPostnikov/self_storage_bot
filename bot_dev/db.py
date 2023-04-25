@@ -3,6 +3,10 @@ import mysql.connector
 from dotenv import load_dotenv, find_dotenv
 
 
+def on_startup():
+    pass
+
+
 def create_connection(host_name, database, user_name, user_password):
     try:
         connection = mysql.connector.connect(host=host_name,
@@ -13,6 +17,7 @@ def create_connection(host_name, database, user_name, user_password):
     except mysql.connector.Error as err:
         return print(f"The error '{err}' occurred")
     return connection
+
 
 # data_user = [tg_username, nickname, phone, adress]
 def create_or_get_user(connection: mysql.connector,
@@ -81,19 +86,34 @@ def get_overdue_boxes(connection: mysql.connector) -> list[tuple]:
     return cursor.fetchall()
 
 
-def get_all_boxes() -> list[tuple]:
-    pass
+def get_overdue_box(connection: mysql.connector, box_id: int) -> tuple:
+    overdue = "SELECT \
+        tg_username, nickname, box_id, finished_at, phone, adress, \
+        DATEDIFF(CURDATE(), finished_at) AS overdue_days \
+        FROM user INNER JOIN box ON user.user_id = box.user_id \
+        WHERE DATEDIFF(CURDATE(), finished_at) > 0 AND box_id = %s"
+    cursor = connection.cursor()
+    cursor.execute(overdue, (box_id, ))
+    return cursor.fetchall()[0]
+
+
+def get_all_boxes(connection: mysql.connector) -> list[tuple]:
+    cursor = connection.cursor()
+    cursor.execute(("SELECT * FROM box"))
+    return cursor.fetchall()
 
 
 def main():
     load_dotenv(find_dotenv())
-    create_connection(
+    conn = create_connection(
         host_name="localhost", 
         database="self_storage",
         user_name="root",
-        user_password="michael"
-        )
+        user_password='michael')
+    return conn
 
 
 if __name__ == "__main__":
-    main()
+    conn = main()
+    data_user = ['@myname', '', '+9048383', 'NYC']
+    user_id = create_or_get_user(conn, data_user)
